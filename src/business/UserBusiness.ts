@@ -1,5 +1,7 @@
 import { UserDatabase } from "../database/UserDatabase";
+import { LoginInputDTO, LoginOutputDTO } from "../dtos/user/login.dto";
 import { SignupInputDTO, SignupOutputDTO } from "../dtos/user/signup.dto";
+import { BadRequestError } from "../errors/BadRequestError";
 import { ConflictError } from "../errors/ConflictError";
 import { TokenPayload, USER_ROLES, User } from "../models/User";
 import { HashManager } from "../services/HashManager";
@@ -59,6 +61,51 @@ export class UserBusiness {
     }
 
     return response
+
+    }
+
+    public login = async (input: LoginInputDTO): Promise<LoginOutputDTO> => {
+
+        const {email, password} = input
+
+        const userDB = await this.userDatabase.findByEmail(email)
+        if (!userDB) {
+            throw new ConflictError ("email já não cadastrado")
+    }
+
+    const user = new User (
+        userDB.id,
+        userDB.name,
+        userDB.nickName,
+        userDB.email,
+        userDB.password,
+        userDB.role,
+        userDB.created_at
+
+    )
+
+    const isPasswordCorrect = await this .hashManager
+    .compare(password, user.getPassword())
+
+    if (!isPasswordCorrect) {
+        throw new BadRequestError("senha incorrreta")
+    }
+
+    const payload: TokenPayload = {
+        id: user.getId(),
+        name: user.getName(),
+        nickname: user.getNickName(),
+        role: user.  getRole()
+    }
+
+    const token = this.tokenManager.createToken(payload)
+
+    const response: LoginOutputDTO = {
+        token: token
+    }
+
+    return response
+    
 
     }
 }
