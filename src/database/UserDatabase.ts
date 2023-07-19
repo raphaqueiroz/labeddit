@@ -24,4 +24,12 @@ export  class UserDatabase extends BaseDatabase {
         await BaseDatabase.connection(UserDatabase.TABLE_USERS)
         .insert(userDB)
     }
+
+    public findById = async (id: string): Promise<UserDB> => {
+        const [userDB]: UserDB[] = await BaseDatabase.connection(UserDatabase.TABLE_USERS)
+        .select()
+        .where({ id: id } )
+    
+        return userDB
+        }
 }
